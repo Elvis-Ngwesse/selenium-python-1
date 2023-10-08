@@ -1,0 +1,16 @@
+environment:
+  - https://int-genesis.gdcgroup.tech/dashboards/main: False
+  - https://qa-genesis.gdcgroup.tech/resources/media: False
+  - https://stage-genesis.gdcgroup.tech/dashboards/main: True
+Browsers:
+  - Chrome: False
+  - Safari: False
+  - Edge: False
+  - Firefox: False
+  - Grid: True
+Loglevel:
+  - Debug: True
+  - Info: False
+Headless: True
+ElementWait: 10
+GridUrl: http://localhost:4444/wd/hub

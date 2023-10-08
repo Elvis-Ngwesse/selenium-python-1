@@ -1,0 +1,5 @@
+pytest==7.4.2
+pytest-bdd==6.1.1
+selenium~=4.13.0
+PyYAML~=6.0.1
+loguru~=0.7.2
