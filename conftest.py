@@ -1,27 +1,39 @@
-from os.path import exists
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+
 import allure
 import pytest
 from allure_commons import plugin_manager
 from allure_pytest_bdd.pytest_bdd_listener import PytestBDDListener
+
 from helpers.utils import add_tags_allure, add_links_allure, Context, load_yaml_file, get_config_key, get_time_stamp
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.firefox.service import Service as FirefoxService
-from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.edge.service import Service as EdgeService
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from pytest_harvest import saved_fixture
 import os
 import glob
 from loguru import logger
 
-from src.base.base_class import BaseClass
+from src.common.cloudflare import CloudFlarePage
+from src.genesis.pages.loginpage import LoginPage
 from src.genesis.pages.dashboard import DashboardsPage
 from src.genesis.pages.site_article import SiteArticlePage
 
+ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "."))
 driver = None
+
+
+def interceptor(request):
+    if request.url.startswith('https://kaxmedia.cloudflareaccess.com/'):
+        request.create_response(
+            status_code=302,
+            # headers={'Content-Type': 'text/html'},  # Optional headers dictionary
+            # body='<html>Hello World!</html>'
+        )
 
 
 @pytest.fixture(autouse=True)
@@ -37,37 +49,65 @@ def webdriver_setup(request):
     # Load yaml file
     load_yaml_file()
 
+    # Get values from Context
+    headless = Context.config['Headless']
+    gpu = Context.config['Gpu']
+    maximized = Context.config['Maximized']
+    detached = Context.config['Detach']
+    headless = Context.config['Headless']
+    remote_grid_url = Context.config['GridUrl']
+    disable_extensions = Context.config['Disable_Extensions']
+    disable_logging = Context.config['Disable_Logging']
+
+    # Get values from config
+    browser = get_config_key('Browsers')
+    page_load_strategy = get_config_key('Page_Load_Strategy')
+    Context.url = get_config_key('environment')
+
     try:
         options = Options()
-        options.headless = Context.config['Headless']
-        browser = get_config_key('Browsers')
-        remote_grid_url = Context.config['GridUrl']
+
+        if headless: options.add_argument('--headless')
+        if gpu: options.add_argument('--disable-gpu')
+        if maximized: options.add_argument('--start-maximized')
+        if detached:options.add_experimental_option("detach", detached)
+        if disable_extensions: options.add_argument('--disable-extensions')
+        if disable_logging: options.add_argument('--disable-logging')
+        options.page_load_strategy = page_load_strategy
+
         logger.info(f'Opening {browser} browser')
         if browser == 'chrome':
             driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         elif browser == 'firefox':
             driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
-        elif browser == 'safari':
-            driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
         elif browser == 'edge':
             driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=options)
         elif browser == 'grid':
-            options.headless = True
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
+            options_grid = Options()
+            # options_grid .add_argument('--headless')
+            options_grid .add_argument('--no-sandbox')
+            # options_grid .add_argument('--disable-dev-shm-usage')
             driver = webdriver.Remote(command_executor=remote_grid_url,
                                       options=webdriver.ChromeOptions())
         Context.driver = driver
         driver.set_window_size(1024, 600)
         driver.maximize_window()
-        url = get_config_key('environment')
-        driver.get(url)
+        driver.delete_all_cookies()
+
+        # driver.request_interceptor = interceptor
+        driver.get(Context.url)
         test_name = request.node.name  # Get current test name
         Context.test_name = test_name
-        _dir = os.getcwd()
-        log_dir = _dir.replace('tests', 'screenshots/*')
+
+        log_dir_screenshots = f'{ROOT_DIR}/screenshots/*'
         # Delete files from screenshot folder
-        files = glob.glob(log_dir)
+        files = glob.glob(log_dir_screenshots)
+        for f in files:
+            os.remove(f)
+
+        log_dir_allure = f'{ROOT_DIR}/allure/*'
+        # Delete files from allure folder
+        files = glob.glob(log_dir_allure)
         for f in files:
             os.remove(f)
 
@@ -115,17 +155,3 @@ def pytest_runtest_makereport(item):
                 add_links_allure()
                 # add description to allure report
                 Context.test_result.description = Context.test_result.name
-
-
-# Initialize page objects
-
-@pytest.fixture()
-def navigate_to_site_article_page():
-    site_article_page = SiteArticlePage()
-    Context.site_article_page = site_article_page
-
-
-@pytest.fixture()
-def navigate_to_dashboards_page():
-    dashboards_page = DashboardsPage()
-    Context.dashboards_page = dashboards_page

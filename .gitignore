@@ -2,3 +2,4 @@
 venv
 pytest.log
 tests/.pytest_cache
+allure

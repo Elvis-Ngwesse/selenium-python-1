@@ -3,10 +3,13 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as wait
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, InvalidElementStateException, StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, InvalidElementStateException, \
+    StaleElementReferenceException
 from helpers.utils import Context
 import os
 from loguru import logger
+
+ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 
 
 class BaseClass:
@@ -24,8 +27,7 @@ class BaseClass:
         This function takes a screenshot
         :param driver:
         """
-        working_dir = os.getcwd()
-        screenshots_dir = working_dir.replace('tests', 'screenshots/')
+        screenshots_dir = ROOT_DIR.replace('src', 'screenshots/')
         test_name = Context.test_name
         try:
             driver.save_screenshot(f'{screenshots_dir}' + f'{test_name}.png')
@@ -325,25 +327,25 @@ class BaseClass:
             raise error
 
     @staticmethod
-    def is_page_loaded(by, web_element):
+    def is_page_loaded(by, web_element, page_name: str):
         """
         This function waits for page to be loaded
+        :param page_name:
         :param by: method to locate web-element
         :param web_element: locator
         :return: boolean value if page is loaded or not
         """
         try:
-            element = Context.driver.find_element(by, web_element)
             WebDriverWait(Context.driver, 15).until(wait.presence_of_element_located((by, web_element)))
+            element = Context.driver.find_element(by, web_element)
             presence_of_value = element.is_displayed()
-            logger.info(f'Page load successfully')
+            logger.info(f'{page_name} load successfully')
             return presence_of_value
         except Exception as error:
-            logger.info('exception is hit')
+            logger.info(f'{page_name} load unsuccessfully')
             BaseClass.take_screenshot(Context.driver)
             logger.error(error)
             raise error
-
 
     @staticmethod
     def is_element_clickable(by, web_element):

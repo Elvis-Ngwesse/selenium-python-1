@@ -6,7 +6,7 @@ ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 
 
 def get_feature_file_path(file_name: str):
-    feature_file = os.path.join(ROOT_DIR, f"tests/features/{file_name}.feature")
+    feature_file = os.path.join(ROOT_DIR, f"tests/features/genesis/{file_name}.feature")
     return feature_file
 
 

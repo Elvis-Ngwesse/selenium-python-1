@@ -1,0 +1,25 @@
+#!/bin/bash
+mkdir -p logs
+sed -i -- "s/  server_name: mc-ci5.do.acronis.fun/  server_name: $DC_HOST/" configuration.yml
+sed -i -- "s/  username: root/  username: $PARTNER_USERNAME/" configuration.yml
+sed -i -- "s/  password: root/  password: $PARTNER_PASSWORD/" configuration.yml
+
+echo "$DOCKER_TEST_PARAM"
+
+trap post_actions EXIT
+
+post_actions()
+{
+    mv logs report/
+    mv report.txt report/
+
+#    Add additional functionality
+#    script needs to be refactored
+#    python log_collector.py
+}
+
+mkdir -p report
+rm -rf report/*
+mv acceptance/dc_acceptance_config.json report/
+
+pytest -m acceptance --reruns 2 -c pytest.ini --alluredir=report/allure 2>&1 | tee -a report.txt
