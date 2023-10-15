@@ -15,7 +15,6 @@ from selenium import webdriver
 from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from pytest_harvest import saved_fixture
 import os
 import glob
@@ -45,12 +44,14 @@ def webdriver_setup(request):
     """
 
     global driver
+    global options
 
     # Load yaml file
     load_yaml_file()
 
     # Get values from Context
     headless = Context.config['Headless']
+    grid = Context.config['Grid']
     gpu = Context.config['Gpu']
     maximized = Context.config['Maximized']
     detached = Context.config['Detach']
@@ -65,12 +66,14 @@ def webdriver_setup(request):
     Context.url = get_config_key('environment')
 
     try:
-        options = Options()
+        if browser == 'chrome':
+            options = webdriver.ChromeOptions()
+        if browser == 'firefox':
+            options = webdriver.FirefoxOptions()
 
         if headless: options.add_argument('--headless')
         if gpu: options.add_argument('--disable-gpu')
         if maximized: options.add_argument('--start-maximized')
-        if detached: options.add_experimental_option("detach", detached)
         if disable_extensions: options.add_argument('--disable-extensions')
         if disable_logging: options.add_argument('--disable-logging')
         options.page_load_strategy = page_load_strategy
@@ -78,19 +81,28 @@ def webdriver_setup(request):
         options.add_argument(f"--user-agent={user_agent}")
 
         logger.info(f'Opening {browser} browser')
-        if browser == 'chrome':
+        if browser == 'chrome' and grid == False:
             driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-        elif browser == 'firefox':
+        elif browser == 'firefox' and grid == False:
             driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
-        elif browser == 'edge':
+        elif browser == 'edge' and grid == False:
             driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=options)
-        elif browser == 'grid':
-            options .add_argument('--headless')
-            options.add_argument('--no-sandbox')
-            options .add_argument('--disable-dev-shm-usage')
-            driver = webdriver.Remote(command_executor=remote_grid_url,
-                                      options=webdriver.ChromeOptions())
+        elif grid:
+            if browser == 'chrome':
+                options.add_argument('headless')
+                options.add_argument('no-sandbox')
+                options.add_argument('--selenium-manager true')
+                driver = webdriver.Remote(command_executor=remote_grid_url,
+                                          options=options)
+            if browser == 'firefox':
+                driver = webdriver.Remote(command_executor=remote_grid_url,
+                                          options=webdriver.FirefoxOptions())
+            if browser == 'edge':
+                driver = webdriver.Remote(command_executor=remote_grid_url,
+                                          options=webdriver.EdgeOptions())
+
         Context.driver = driver
+        driver.set_script_timeout(120)
         driver.set_window_size(1024, 600)
         driver.maximize_window()
         driver.delete_all_cookies()

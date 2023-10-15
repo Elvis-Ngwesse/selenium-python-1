@@ -2,11 +2,11 @@ environment:
   - https://rahulshettyacademy.com/seleniumPractise/#/: False
   - https://www.google.com/: True
 Browsers:
-  - Chrome: True
+  - Chrome: False
   - Safari: False
   - Edge: False
-  - Firefox: False
-  - Grid: False
+  - Firefox: True
+Grid: True
 Loglevel:
   - Debug: True
   - Info: False

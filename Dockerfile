@@ -1,4 +1,4 @@
-FROM python:3.9-alpine
+FROM python:3
 
 EXPOSE 8000
 
@@ -25,4 +25,3 @@ RUN echo "argument is $Test_Count"
 RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
 RUN cd /app
-CMD ["pytest", "-n $Test_Count"]

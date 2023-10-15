@@ -1,43 +1,17 @@
-# To execute this docker-compose yml file use `docker-compose -f docker-compose-v3-dev-channel.yml up`
-# Add the `-d` flag at the end for detached execution
-# To stop the execution, hit Ctrl+C, and then `docker-compose -f docker-compose-v3-dev-channel.yml down`
-version: "3"
+version: '3.4'
+
 services:
-  chrome:
-    platform: linux/amd64
-    image: selenium/node-chrome:dev
-    depends_on:
-      - selenium-hub
-    environment:
-      - SE_EVENT_BUS_HOST=selenium-hub
-      - SE_EVENT_BUS_PUBLISH_PORT=4442
-      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+  seleniumpython:
+    image: test_image
+    container_name: test_container
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    networks:
+      - selenium-hub_selenium_grid
+#    command: ["pytest"]
 
-  edge:
-    platform: linux/amd64
-    image: selenium/node-edge:dev
-    depends_on:
-      - selenium-hub
-    environment:
-      - SE_EVENT_BUS_HOST=selenium-hub
-      - SE_EVENT_BUS_PUBLISH_PORT=4442
-      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-
-  firefox:
-    platform: linux/amd64
-    image: selenium/node-firefox:dev
-    depends_on:
-      - selenium-hub
-    environment:
-      - SE_EVENT_BUS_HOST=selenium-hub
-      - SE_EVENT_BUS_PUBLISH_PORT=4442
-      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-
-  selenium-hub:
-    platform: linux/amd64
-    image: selenium/hub:latest
-    container_name: selenium-hub
-    ports:
-      - "4442:4442"
-      - "4443:4443"
-      - "4444:4444"
+networks:
+  selenium-hub_selenium_grid:
+    external:
+      name: selenium_grid_custom_network
