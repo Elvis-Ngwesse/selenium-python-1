@@ -269,7 +269,7 @@ class BaseClass:
         :param web_element: locator
         """
         try:
-            WebDriverWait(Context.driver, 10).until(wait.presence_of_element_located((by, web_element)))
+            WebDriverWait(Context.driver, 5).until(wait.presence_of_element_located((by, web_element)))
             logger.info(f'Successfully waited for web-element: {web_element}')
         except TimeoutException as error:
             logger.error(error.msg)
@@ -336,7 +336,7 @@ class BaseClass:
         :return: boolean value if page is loaded or not
         """
         try:
-            WebDriverWait(Context.driver, 15).until(wait.presence_of_element_located((by, web_element)))
+            WebDriverWait(Context.driver, 5).until(wait.presence_of_element_located((by, web_element)))
             element = Context.driver.find_element(by, web_element)
             presence_of_value = element.is_displayed()
             logger.info(f'{page_name} load successfully')

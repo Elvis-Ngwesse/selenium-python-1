@@ -1,3 +1,6 @@
+import time
+from threading import Lock
+
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
@@ -18,10 +21,7 @@ import os
 import glob
 from loguru import logger
 
-from src.common.cloudflare import CloudFlarePage
-from src.genesis.pages.loginpage import LoginPage
-from src.genesis.pages.dashboard import DashboardsPage
-from src.genesis.pages.site_article import SiteArticlePage
+from src.base.base_class import BaseClass
 
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "."))
 driver = None
@@ -70,23 +70,24 @@ def webdriver_setup(request):
         if headless: options.add_argument('--headless')
         if gpu: options.add_argument('--disable-gpu')
         if maximized: options.add_argument('--start-maximized')
-        if detached:options.add_experimental_option("detach", detached)
+        if detached: options.add_experimental_option("detach", detached)
         if disable_extensions: options.add_argument('--disable-extensions')
         if disable_logging: options.add_argument('--disable-logging')
         options.page_load_strategy = page_load_strategy
+        user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36'
+        options.add_argument(f"--user-agent={user_agent}")
 
         logger.info(f'Opening {browser} browser')
         if browser == 'chrome':
             driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         elif browser == 'firefox':
-            driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
+            driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
         elif browser == 'edge':
             driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=options)
         elif browser == 'grid':
-            options_grid = Options()
-            # options_grid .add_argument('--headless')
-            options_grid .add_argument('--no-sandbox')
-            # options_grid .add_argument('--disable-dev-shm-usage')
+            options .add_argument('--headless')
+            options.add_argument('--no-sandbox')
+            options .add_argument('--disable-dev-shm-usage')
             driver = webdriver.Remote(command_executor=remote_grid_url,
                                       options=webdriver.ChromeOptions())
         Context.driver = driver
@@ -94,16 +95,9 @@ def webdriver_setup(request):
         driver.maximize_window()
         driver.delete_all_cookies()
 
-        # driver.request_interceptor = interceptor
         driver.get(Context.url)
         test_name = request.node.name  # Get current test name
         Context.test_name = test_name
-
-        log_dir_screenshots = f'{ROOT_DIR}/screenshots/*'
-        # Delete files from screenshot folder
-        files = glob.glob(log_dir_screenshots)
-        for f in files:
-            os.remove(f)
 
         log_dir_allure = f'{ROOT_DIR}/allure/*'
         # Delete files from allure folder
@@ -112,9 +106,12 @@ def webdriver_setup(request):
             os.remove(f)
 
         yield
+
         driver.quit()
         logger.info(f'Closing {browser} browser')
     except Exception as error:
+        if driver:
+            driver.quit()
         logger.error(error)
         raise error
 
@@ -141,12 +138,22 @@ def pytest_bdd_after_scenario(request, feature, scenario):
                            attachment_type=allure.attachment_type.TEXT)
 
 
-@pytest.hookimpl(hookwrapper=True)
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item):
     outcome = yield
     report = outcome.get_result()
 
-    if report.when == "call":
+    # Lock current thread execution
+    lock = Lock()
+    lock.acquire()
+
+    if report.when == "call" and report.failed:
+        log_dir_screenshots = f'{ROOT_DIR}/screenshots/*'
+        # Delete files from screenshot folder
+        files = glob.glob(log_dir_screenshots)
+        for f in files:
+            os.remove(f)
+        BaseClass.take_screenshot(driver)
         for plugin in plugin_manager.list_name_plugin():
             p = plugin[1]
             if isinstance(p, PytestBDDListener):
@@ -155,3 +162,5 @@ def pytest_runtest_makereport(item):
                 add_links_allure()
                 # add description to allure report
                 Context.test_result.description = Context.test_result.name
+
+    lock.release()

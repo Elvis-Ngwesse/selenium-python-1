@@ -3,3 +3,6 @@ venv
 pytest.log
 tests/.pytest_cache
 allure
+.DS_Store
+.idea
+

@@ -7,5 +7,5 @@ allure-pytest-bdd
 pytest-harvest
 webdriver-manager
 pytest-xdist
-requests
+requests==2.31.0
 

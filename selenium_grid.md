@@ -15,4 +15,4 @@ docker build
 docker build --tag 'image_name' .
 docker build --tag 'pytest_container' .
 docker run --env-file .env image-name
-docker run pytest_container
+docker run --net=host pytest_container

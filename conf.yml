@@ -1,14 +1,12 @@
 environment:
-  - https://int-genesis.gdcgroup.tech/dashboards/main: False
-  - https://qa-genesis.gdcgroup.tech/resources/media: False
-  - https://stage-genesis.gdcgroup.tech/dashboards/main: False
-  - https://qa-genesis.internal.gdcgroup.com: True
+  - https://rahulshettyacademy.com/seleniumPractise/#/: False
+  - https://www.google.com/: True
 Browsers:
-  - Chrome: False
+  - Chrome: True
   - Safari: False
   - Edge: False
   - Firefox: False
-  - Grid: True
+  - Grid: False
 Loglevel:
   - Debug: True
   - Info: False
@@ -24,10 +22,3 @@ Disable_Extensions: True
 Disable_Logging: False
 ElementWait: 10
 GridUrl: http://localhost:4444/wd/hub
-test_User:
-  User_1:
-    - username: william.rowan@gdcgroup.com
-    - password: genesis_tester
-  User_2:
-    - username: craig.bennett+1@gdcgroup.com
-    - password: gdc.happy.tester
