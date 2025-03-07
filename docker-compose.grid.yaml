@@ -57,5 +57,5 @@ networks:
 
 volumes:
   selenium_volume:
-    name: selenium_volume_grid
-    driver: local
+    external: true
+    name: selenium_volume

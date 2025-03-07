@@ -1,4 +1,4 @@
-version: '3.4'
+version: '3.5'
 
 services:
   seleniumpython:
@@ -9,9 +9,20 @@ services:
       dockerfile: ./Dockerfile
     networks:
       - selenium-hub_selenium_grid
-#    command: ["pytest"]
+    volumes:
+      - selenium_volume:/app
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    command: ["pytest -n ${Test_Count}"]
 
 networks:
   selenium-hub_selenium_grid:
-    external:
-      name: selenium_grid_custom_network
+    external: true
+    name: selenium_grid_custom_network
+
+volumes:
+  selenium_volume:
+    external: true
+    name: selenium_volume
